@@ -28,4 +28,4 @@ class ExclamationFunction(Function):
     pass
 
   def process(self, input, context):
-    return input + '!'
+    return f'{input}!'

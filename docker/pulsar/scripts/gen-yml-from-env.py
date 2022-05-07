@@ -53,7 +53,7 @@ SET_KEYS = [
 PF_ENV_PREFIX = 'PF_'
 
 if len(sys.argv) < 2:
-    print('Usage: %s' % (sys.argv[0]))
+    print(f'Usage: {sys.argv[0]}')
     sys.exit(1)
 
 conf_files = sys.argv[1:]
@@ -74,6 +74,7 @@ for conf_filename in conf_files:
 
         i = 0
         conf_to_modify = conf
+        modified = True
         while i < len(key_parts):
             key_part = key_parts[i]
             if i == (len(key_parts) - 1):
@@ -83,12 +84,10 @@ for conf_filename in conf_files:
                     conf_to_modify[key_part] = v.split(',')
                 else:
                     conf_to_modify[key_part] = v
-                modified = True
             else:
-                if not key_part in conf_to_modify:
+                if key_part not in conf_to_modify:
                     conf_to_modify[key_part] = {}
                 conf_to_modify = conf_to_modify[key_part]
-                modified = True
             i += 1
 
     containerFactory = os.environ.get('PF_containerFactory', None)
@@ -103,7 +102,5 @@ for conf_filename in conf_files:
         conf.pop('kubernetesContainerFactory', None)
         conf.pop('processContainerFactory', None)
 
-    # Store back the updated config in the same file
-    f = open(conf_filename , 'w')
-    yaml.dump(conf, f, default_flow_style=False)
-    f.close()
+    with open(conf_filename , 'w') as f:
+        yaml.dump(conf, f, default_flow_style=False)

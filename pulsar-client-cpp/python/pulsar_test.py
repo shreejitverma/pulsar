@@ -67,9 +67,7 @@ def doHttpPut(url, data):
         urlopen(req)
     except Exception as ex:
         # ignore conflicts exception to have test idempotency
-        if "409" in str(ex):
-            pass
-        else:
+        if "409" not in str(ex):
             raise ex
 
 
@@ -160,10 +158,10 @@ class PulsarTest(TestCase):
         producer = client.create_producer(topic)
         consumer = client.subscribe(topic, "sub-name")
         msg_id = producer.send(b"hello")
-        print("send to {}".format(msg_id))
+        print(f"send to {msg_id}")
         msg = consumer.receive(TM)
         consumer.acknowledge(msg)
-        print("receive from {}".format(msg.message_id()))
+        print(f"receive from {msg.message_id()}")
         self.assertEqual(msg_id, msg.message_id())
         client.close()
 
@@ -195,9 +193,9 @@ class PulsarTest(TestCase):
         producer.send(b"hello")
 
         redelivery_count = 0
-        for i in range(4):
+        for _ in range(4):
             msg = consumer.receive(TM)
-            print("Received message %s" % msg.data())
+            print(f"Received message {msg.data()}")
             consumer.negative_acknowledge(msg)
             redelivery_count = msg.redelivery_count()
 
@@ -319,12 +317,15 @@ class PulsarTest(TestCase):
             certs_dir = "../../pulsar-broker/src/test/resources/authentication/tls/"
         client = Client(
             self.serviceUrlTls,
-            tls_trust_certs_file_path=certs_dir + "cacert.pem",
+            tls_trust_certs_file_path=f"{certs_dir}cacert.pem",
             tls_allow_insecure_connection=False,
-            authentication=AuthenticationTLS(certs_dir + "client-cert.pem", certs_dir + "client-key.pem"),
+            authentication=AuthenticationTLS(
+                f"{certs_dir}client-cert.pem", f"{certs_dir}client-key.pem"
+            ),
         )
 
-        topic = "my-python-topic-tls-auth-" + str(time.time())
+
+        topic = f"my-python-topic-tls-auth-{str(time.time())}"
         consumer = client.subscribe(topic, "my-sub", consumer_type=ConsumerType.Shared)
         producer = client.create_producer(topic)
         producer.send(b"hello")
@@ -343,16 +344,18 @@ class PulsarTest(TestCase):
         if not os.path.exists(certs_dir):
             certs_dir = "../../pulsar-broker/src/test/resources/authentication/tls/"
         authPlugin = "org.apache.pulsar.client.impl.auth.AuthenticationTls"
-        authParams = "tlsCertFile:%s/client-cert.pem,tlsKeyFile:%s/client-key.pem" % (certs_dir, certs_dir)
+        authParams = f"tlsCertFile:{certs_dir}/client-cert.pem,tlsKeyFile:{certs_dir}/client-key.pem"
+
 
         client = Client(
             self.serviceUrlTls,
-            tls_trust_certs_file_path=certs_dir + "cacert.pem",
+            tls_trust_certs_file_path=f"{certs_dir}cacert.pem",
             tls_allow_insecure_connection=False,
             authentication=Authentication(authPlugin, authParams),
         )
 
-        topic = "my-python-topic-tls-auth-2-" + str(time.time())
+
+        topic = f"my-python-topic-tls-auth-2-{str(time.time())}"
         consumer = client.subscribe(topic, "my-sub", consumer_type=ConsumerType.Shared)
         producer = client.create_producer(topic)
         producer.send(b"hello")
@@ -403,16 +406,18 @@ class PulsarTest(TestCase):
         if not os.path.exists(certs_dir):
             certs_dir = "../../pulsar-broker/src/test/resources/authentication/tls/"
         authPlugin = "tls"
-        authParams = "tlsCertFile:%s/client-cert.pem,tlsKeyFile:%s/client-key.pem" % (certs_dir, certs_dir)
+        authParams = f"tlsCertFile:{certs_dir}/client-cert.pem,tlsKeyFile:{certs_dir}/client-key.pem"
+
 
         client = Client(
             self.serviceUrlTls,
-            tls_trust_certs_file_path=certs_dir + "cacert.pem",
+            tls_trust_certs_file_path=f"{certs_dir}cacert.pem",
             tls_allow_insecure_connection=False,
             authentication=Authentication(authPlugin, authParams),
         )
 
-        topic = "my-python-topic-tls-auth-3-" + str(time.time())
+
+        topic = f"my-python-topic-tls-auth-3-{str(time.time())}"
         consumer = client.subscribe(topic, "my-sub", consumer_type=ConsumerType.Shared)
         producer = client.create_producer(topic)
         producer.send(b"hello")
@@ -434,10 +439,11 @@ class PulsarTest(TestCase):
         authParams = "blah"
         client = Client(
             self.serviceUrlTls,
-            tls_trust_certs_file_path=certs_dir + "cacert.pem",
+            tls_trust_certs_file_path=f"{certs_dir}cacert.pem",
             tls_allow_insecure_connection=False,
             authentication=Authentication(authPlugin, authParams),
         )
+
 
         with self.assertRaises(pulsar.ConnectError):
             client.subscribe("my-python-topic-auth-junk-params", "my-sub", consumer_type=ConsumerType.Shared)
@@ -448,7 +454,7 @@ class PulsarTest(TestCase):
         received_messages = []
 
         def listener(consumer, msg):
-            print("Got message: %s" % msg)
+            print(f"Got message: {msg}")
             received_messages.append(msg)
             consumer.acknowledge(msg)
 
@@ -568,10 +574,15 @@ class PulsarTest(TestCase):
 
     def test_producer_sequence_after_reconnection(self):
         # Enable deduplication on namespace
-        doHttpPost(self.adminUrl + "/admin/v2/namespaces/public/default/deduplication", "true")
+        doHttpPost(
+            f"{self.adminUrl}/admin/v2/namespaces/public/default/deduplication",
+            "true",
+        )
+
         client = Client(self.serviceUrl)
 
-        topic = "my-python-test-producer-sequence-after-reconnection-" + str(time.time())
+        topic = f"my-python-test-producer-sequence-after-reconnection-{str(time.time())}"
+
 
         producer = client.create_producer(topic, producer_name="my-producer-name")
         self.assertEqual(producer.last_sequence_id(), -1)
@@ -591,14 +602,21 @@ class PulsarTest(TestCase):
 
         client.close()
 
-        doHttpPost(self.adminUrl + "/admin/v2/namespaces/public/default/deduplication", "false")
+        doHttpPost(
+            f"{self.adminUrl}/admin/v2/namespaces/public/default/deduplication",
+            "false",
+        )
 
     def test_producer_deduplication(self):
         # Enable deduplication on namespace
-        doHttpPost(self.adminUrl + "/admin/v2/namespaces/public/default/deduplication", "true")
+        doHttpPost(
+            f"{self.adminUrl}/admin/v2/namespaces/public/default/deduplication",
+            "true",
+        )
+
         client = Client(self.serviceUrl)
 
-        topic = "my-python-test-producer-deduplication-" + str(time.time())
+        topic = f"my-python-test-producer-deduplication-{str(time.time())}"
 
         producer = client.create_producer(topic, producer_name="my-producer-name")
         self.assertEqual(producer.last_sequence_id(), -1)
@@ -638,7 +656,10 @@ class PulsarTest(TestCase):
 
         client.close()
 
-        doHttpPost(self.adminUrl + "/admin/v2/namespaces/public/default/deduplication", "false")
+        doHttpPost(
+            f"{self.adminUrl}/admin/v2/namespaces/public/default/deduplication",
+            "false",
+        )
 
     def test_producer_routing_mode(self):
         client = Client(self.serviceUrl)
@@ -727,7 +748,7 @@ class PulsarTest(TestCase):
 
     def test_publish_compact_and_consume(self):
         client = Client(self.serviceUrl)
-        topic = "compaction_%s" % (uuid.uuid4())
+        topic = f"compaction_{uuid.uuid4()}"
         producer = client.create_producer(topic, producer_name="my-producer-name", batching_enabled=False)
         self.assertEqual(producer.last_sequence_id(), -1)
         consumer = client.subscribe(topic, "my-sub1", is_read_compacted=True)
@@ -740,7 +761,7 @@ class PulsarTest(TestCase):
         producer.close()
 
         # issue compact command, and wait success
-        url = "%s/admin/v2/persistent/public/default/%s/compaction" % (self.adminUrl, topic)
+        url = f"{self.adminUrl}/admin/v2/persistent/public/default/{topic}/compaction"
         doHttpPut(url, "")
         while True:
             s = doHttpGet(url).decode("utf-8")
@@ -827,7 +848,7 @@ class PulsarTest(TestCase):
 
     def test_seek(self):
         client = Client(self.serviceUrl)
-        topic = "my-python-topic-seek-" + str(time.time())
+        topic = f"my-python-topic-seek-{str(time.time())}"
         consumer = client.subscribe(topic, "my-sub", consumer_type=ConsumerType.Shared)
         producer = client.create_producer(topic)
 
@@ -924,9 +945,12 @@ class PulsarTest(TestCase):
         topic3 = "persistent://public/default-2/my-python-topics-consumer-3"  # topic from different namespace
         topics = [topic1, topic2, topic3]
 
-        url1 = self.adminUrl + "/admin/v2/persistent/public/default/my-python-topics-consumer-1/partitions"
-        url2 = self.adminUrl + "/admin/v2/persistent/public/default/my-python-topics-consumer-2/partitions"
-        url3 = self.adminUrl + "/admin/v2/persistent/public/default-2/my-python-topics-consumer-3/partitions"
+        url1 = f"{self.adminUrl}/admin/v2/persistent/public/default/my-python-topics-consumer-1/partitions"
+
+        url2 = f"{self.adminUrl}/admin/v2/persistent/public/default/my-python-topics-consumer-2/partitions"
+
+        url3 = f"{self.adminUrl}/admin/v2/persistent/public/default-2/my-python-topics-consumer-3/partitions"
+
 
         doHttpPut(url1, "2")
         doHttpPut(url2, "3")
@@ -949,7 +973,7 @@ class PulsarTest(TestCase):
         for i in range(100):
             producer3.send(b"hello-3-%d" % i)
 
-        for i in range(300):
+        for _ in range(300):
             msg = consumer.receive(TM)
             consumer.acknowledge(msg)
 
@@ -968,9 +992,12 @@ class PulsarTest(TestCase):
         topic2 = "persistent://public/default/my-python-pattern-consumer-2"
         topic3 = "persistent://public/default/my-python-pattern-consumer-3"
 
-        url1 = self.adminUrl + "/admin/v2/persistent/public/default/my-python-pattern-consumer-1/partitions"
-        url2 = self.adminUrl + "/admin/v2/persistent/public/default/my-python-pattern-consumer-2/partitions"
-        url3 = self.adminUrl + "/admin/v2/persistent/public/default/my-python-pattern-consumer-3/partitions"
+        url1 = f"{self.adminUrl}/admin/v2/persistent/public/default/my-python-pattern-consumer-1/partitions"
+
+        url2 = f"{self.adminUrl}/admin/v2/persistent/public/default/my-python-pattern-consumer-2/partitions"
+
+        url3 = f"{self.adminUrl}/admin/v2/persistent/public/default/my-python-pattern-consumer-3/partitions"
+
 
         doHttpPut(url1, "2")
         doHttpPut(url2, "3")
@@ -1000,7 +1027,7 @@ class PulsarTest(TestCase):
         for i in range(100):
             producer3.send(b"hello-3-%d" % i)
 
-        for i in range(300):
+        for _ in range(300):
             msg = consumer.receive(TM)
             consumer.acknowledge(msg)
 
@@ -1020,7 +1047,8 @@ class PulsarTest(TestCase):
         topic_partitioned = "persistent://public/default/test_get_topics_partitions"
         topic_non_partitioned = "persistent://public/default/test_get_topics_not-partitioned"
 
-        url1 = self.adminUrl + "/admin/v2/persistent/public/default/test_get_topics_partitions/partitions"
+        url1 = f"{self.adminUrl}/admin/v2/persistent/public/default/test_get_topics_partitions/partitions"
+
         doHttpPut(url1, "3")
 
         self.assertEqual(
@@ -1114,7 +1142,8 @@ class PulsarTest(TestCase):
 
     def test_get_partitioned_topic_name(self):
         client = Client(self.serviceUrl)
-        url1 = self.adminUrl + "/admin/v2/persistent/public/default/partitioned_topic_name_test/partitions"
+        url1 = f"{self.adminUrl}/admin/v2/persistent/public/default/partitioned_topic_name_test/partitions"
+
         doHttpPut(url1, "3")
 
         partitions = [
@@ -1186,7 +1215,7 @@ class PulsarTest(TestCase):
             producer = client.create_producer("test_connect_timeout")
             self.fail("create_producer should not succeed")
         except pulsar.ConnectError as expected:
-            print("expected error: {} when create producer".format(expected))
+            print(f"expected error: {expected} when create producer")
         t2 = time.time()
         self.assertGreater(t2 - t1, 1.0)
         self.assertLess(t2 - t1, 1.5)  # 1.5 seconds is long enough

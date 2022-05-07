@@ -69,8 +69,8 @@ def getManagedLedgerInfo(zk, mlPath):
             Merge(mlData, mlInfo)
         return mlInfo
     except Exception as e:
-            traceback.print_exc()
-            print('Failed to get data for {} due to {}'.format(mlPath, repr(e)))
+        traceback.print_exc()
+        print(f'Failed to get data for {mlPath} due to {repr(e)}')
 
 
 '''
@@ -95,9 +95,9 @@ def deleteLedgerIdsFromManagedLedgerInfo(zk, mlPath, deletLedgerIds):
         except Exception as formatException:
             Merge(mlData, mlInfo)
             isTextFormat = True
-        
+
         ledgerInfoList = mlInfo.ledgerInfo
-        
+
         i = 0
         while i < len(ledgerInfoList):
             ledgerInfo = ledgerInfoList[i]
@@ -105,7 +105,7 @@ def deleteLedgerIdsFromManagedLedgerInfo(zk, mlPath, deletLedgerIds):
                 ledgerInfoList.remove(ledgerInfo)
             else:
                 i += 1
-        
+
         updatedMlInfo = None
         if isTextFormat:
             updatedMlInfo = MessageToString(mlInfo, True)
@@ -113,10 +113,10 @@ def deleteLedgerIdsFromManagedLedgerInfo(zk, mlPath, deletLedgerIds):
             updatedMlInfo = mlInfo.SerializeToString(); 
         zk.set(mlPath, updatedMlInfo, version=mlStat.version)
         print('Updated {} with value\n{}'.format(mlPath, str(mlInfo)))
-        
+
     except Exception as e:
-            traceback.print_exc()
-            print('Failed to delete ledgerIds for {} due to {}'.format(mlPath, repr(e)))
+        traceback.print_exc()
+        print(f'Failed to delete ledgerIds for {mlPath} due to {repr(e)}')
 
 '''
 Returns managed-ledger cursor info for given managed-cursor path
@@ -134,7 +134,7 @@ def getManagedCursorInfo(zk, mlPath):
         cursors = zk.get_children(mlPath)
         cursorList = {}
         for cursor in cursors:
-            cursorData = zk.get(mlPath + "/" + cursor)[0]
+            cursorData = zk.get(f"{mlPath}/{cursor}")[0]
             cursorInfo = MLDataFormats_pb2.ManagedCursorInfo()
             try:
                 cursorInfo.ParseFromString(cursorData)
@@ -143,8 +143,8 @@ def getManagedCursorInfo(zk, mlPath):
             cursorList[cursor] = cursorInfo
         return cursorList
     except Exception as e:
-            traceback.print_exc()
-            print('Failed to get ml-cursor {} due to {}'.format(mlPath, repr(e)))
+        traceback.print_exc()
+        print(f'Failed to get ml-cursor {mlPath} due to {repr(e)}')
 
 
 '''
@@ -180,8 +180,8 @@ def updateCursorMarkDelete(zk, cursorPath, markDeleteLedgerId, markDeleteEntryId
         zk.set(cursorPath, sData, version=cursorStat.version)
         print('Updated {} with value \n{}'.format(cursorPath, cursorInfo))
     except Exception as e:
-            traceback.print_exc()
-            print('Failed to update ml-cursor {} due to {}'.format(cursorPath, repr(e)))
+        traceback.print_exc()
+        print(f'Failed to update ml-cursor {cursorPath} due to {repr(e)}')
 
 
 
@@ -220,10 +220,10 @@ def printManagedCursorCommand(zk, mlPath, cursorName):
         if cursorName:
             print(getManagedCursorInfo(zk, mlPath)[cursorName])
         else:
-            print('Usage: --command {} [--cursorName]'.format(printCursorsCommands))
+            print(f'Usage: --command {printCursorsCommands} [--cursorName]')
     except Exception as e:
         traceback.print_exc()
-        print('No cursor found for {}/{}'.format(mlPath, cursorName))
+        print(f'No cursor found for {mlPath}/{cursorName}')
 
 '''
 delete specific ledgerIds from the managed-ledger info
@@ -242,15 +242,13 @@ def deleteMLLedgerIdsCommand(zk, mlPath, deleteLedgerIds):
     try:
         if deleteLedgerIds:
             deletLedgerIds = set(deleteLedgerIds.split(","))
-            deletLedgerIdSet = set()
-            for id in deletLedgerIds:
-                deletLedgerIdSet.add(long(id))
+            deletLedgerIdSet = {long(id) for id in deletLedgerIds}
             deleteLedgerIdsFromManagedLedgerInfo(zk, mlPath, deletLedgerIdSet)
         else:
-            print('Usage: --command {} [--ledgerIds]'.format(deleteMlLedgerIds))
+            print(f'Usage: --command {deleteMlLedgerIds} [--ledgerIds]')
     except Exception as e:
         traceback.print_exc()
-        print('Failed to delete ml-ledger_ids {} due to {}'.format(mlPath, repr(e)))
+        print(f'Failed to delete ml-ledger_ids {mlPath} due to {repr(e)}')
 
 '''
 Update mark-delete position of the given managed-cursor
@@ -274,23 +272,35 @@ def updateMarkDeleteOfCursorCommand(zk, mlPath, cursorName, markDeletePosition):
             if markDeletePosition:
                 positionPair = markDeletePosition.split(":")
                 if len(positionPair) == 2:
-                    updateCursorMarkDelete(zk, mlPath + "/" + cursorName, (long(positionPair[0])), long(positionPair[1]))
+                    updateCursorMarkDelete(
+                        zk,
+                        f"{mlPath}/{cursorName}",
+                        long(positionPair[0]),
+                        long(positionPair[1]),
+                    )
+
                 else:
                     print("markDeletePosition must be in format <ledger_id>:<entry_id>")
             else:
-                print('Usage: --command {} [----cursorName] [--cursorMarkDelete]'.format(updateMakDeleteCursor))
+                print(
+                    f'Usage: --command {updateMakDeleteCursor} [----cursorName] [--cursorMarkDelete]'
+                )
+
         else:
-            print('Usage: --command {} [--cursorName] [--cursorMarkDelete]'.format(updateMakDeleteCursor))
-        
-        
+            print(
+                f'Usage: --command {updateMakDeleteCursor} [--cursorName] [--cursorMarkDelete]'
+            )
+
+                    
+
     except Exception as e:
         traceback.print_exc()
-        print('Failed to update ml-cursor {}/{} due to {}'.format(mlPath, cursorName, repr(e)))
+        print(f'Failed to update ml-cursor {mlPath}/{cursorName} due to {repr(e)}')
             
 if __name__ in '__main__':
     
     commandHelpText = 'Managed-ledger command: \n{}, {}, {}, {}'.format(printMlCommand, deleteMlLedgerIds, printCursorsCommands, updateMakDeleteCursor)
-    
+
     try:
         command = sys.argv[1]
     except Exception as indexError:
@@ -312,7 +322,7 @@ if __name__ in '__main__':
 
     zk = KazooClient(hosts=zkSrvr)
     zk.start()
-    
+
     if command == printMlCommand:
         printManagedLedgerCommand(zk, mlPath)
     elif command == deleteMlLedgerIds:
@@ -322,4 +332,6 @@ if __name__ in '__main__':
     elif command == updateMakDeleteCursor:
         updateMarkDeleteOfCursorCommand(zk, mlPath, cursorName, cursorMarkDelete)
     else:
-        print('{} command not found. supported {}, pass command as a first argument'.format(command, commandHelpText))
+        print(
+            f'{command} command not found. supported {commandHelpText}, pass command as a first argument'
+        )

@@ -48,10 +48,12 @@ class RPCClient(object):
         self.partition_key = '{0}_{1}'.format(UUID, self.client_no)
         self.client = pulsar.Client('pulsar://localhost:6650')
         self.producer = self.client.create_producer(server_topic)
-        self.consumer = \
-            self.client.subscribe(client_topic,
-                                  'rpc-client-{}'.format(self.partition_key),
-                                  message_listener=self.on_response)
+        self.consumer = self.client.subscribe(
+            client_topic,
+            f'rpc-client-{self.partition_key}',
+            message_listener=self.on_response,
+        )
+
 
         self.consumer.resume_message_listener()
 

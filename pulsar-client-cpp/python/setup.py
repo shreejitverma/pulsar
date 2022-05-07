@@ -37,12 +37,7 @@ def get_version():
     root = ET.XML(open(POM_PATH).read())
     version = root.find('{http://maven.apache.org/POM/4.0.0}version').text.strip()
 
-    if use_full_pom_name:
-        return version
-    else:
-        # Strip the '-incubating' suffix, since it prevents the packages
-        # from being uploaded into PyPI
-        return version.split('-')[0]
+    return version if use_full_pom_name else version.split('-')[0]
 
 
 def get_name():
@@ -77,25 +72,19 @@ dependencies = [
     'enum34>=1.1.9; python_version < "3.4"'
 ]
 
-extras_require = {}
+extras_require = {
+    "functions": sorted(
+        {
+            "protobuf>=3.6.1",
+            "grpcio<1.28,>=1.8.2",
+            "apache-bookkeeper-client>=4.9.2",
+            "prometheus_client",
+            "ratelimit",
+        }
+    ),
+    "avro": sorted({"fastavro==0.24.0"}),
+}
 
-# functions dependencies
-extras_require["functions"] = sorted(
-    {
-      "protobuf>=3.6.1",
-      "grpcio<1.28,>=1.8.2",
-      "apache-bookkeeper-client>=4.9.2",
-      "prometheus_client",
-      "ratelimit"
-    }
-)
-
-# avro dependencies
-extras_require["avro"] = sorted(
-    {
-      "fastavro==0.24.0"
-    }
-)
 
 # all dependencies
 extras_require["all"] = sorted(set(sum(extras_require.values(), [])))

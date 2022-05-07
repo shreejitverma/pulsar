@@ -19,4 +19,4 @@
 #
 
 def exclamation(input):
-    return input + '!'
+    return f'{input}!'

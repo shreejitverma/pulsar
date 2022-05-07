@@ -58,16 +58,13 @@ DEFAULT_SERIALIZER = "serde.IdentitySerDe"
 PY3 = sys.version_info[0] >= 3
 
 def base64ify(bytes_or_str):
-    if PY3 and isinstance(bytes_or_str, str):
-        input_bytes = bytes_or_str.encode('utf8')
-    else:
-        input_bytes = bytes_or_str
+  if PY3 and isinstance(bytes_or_str, str):
+      input_bytes = bytes_or_str.encode('utf8')
+  else:
+      input_bytes = bytes_or_str
 
-    output_bytes = base64.urlsafe_b64encode(input_bytes)
-    if PY3:
-        return output_bytes.decode('ascii')
-    else:
-        return output_bytes
+  output_bytes = base64.urlsafe_b64encode(input_bytes)
+  return output_bytes.decode('ascii') if PY3 else output_bytes
 
 class PythonInstance(object):
   def __init__(self,
@@ -108,11 +105,14 @@ class PythonInstance(object):
     self.expected_healthcheck_interval = expected_healthcheck_interval
     self.secrets_provider = secrets_provider
     self.state_context = state_context.NullStateContext()
-    self.metrics_labels = [function_details.tenant,
-                           "%s/%s" % (function_details.tenant, function_details.namespace),
-                           function_details.name,
-                           instance_id, cluster_name,
-                           "%s/%s/%s" % (function_details.tenant, function_details.namespace, function_details.name)]
+    self.metrics_labels = [
+        function_details.tenant,
+        f"{function_details.tenant}/{function_details.namespace}",
+        function_details.name,
+        instance_id,
+        cluster_name,
+        f"{function_details.tenant}/{function_details.namespace}/{function_details.name}",
+    ]
     self.stats = Stats(self.metrics_labels)
 
   def health_check(self):

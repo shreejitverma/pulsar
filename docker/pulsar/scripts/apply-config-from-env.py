@@ -28,7 +28,7 @@
 import os, sys
 
 if len(sys.argv) < 2:
-    print('Usage: %s' % (sys.argv[0]))
+    print(f'Usage: {sys.argv[0]}')
     sys.exit(1)
 
 # Always apply env config to env scripts as well
@@ -55,22 +55,18 @@ for conf_filename in conf_files:
             keys[k.strip()] = len(lines) - 1
         except:
             if PF_ENV_DEBUG:
-                print("[%s] skip Processing %s" % (conf_filename, line))
+                print(f"[{conf_filename}] skip Processing {line}")
 
     # Update values from Env
     for k in sorted(os.environ.keys()):
         v = os.environ[k].strip()
 
         # Hide the value in logs if is password.
-        if "password" in k:
-            displayValue = "********"
-        else:
-            displayValue = v
-
+        displayValue = "********" if "password" in k else v
         if k.startswith(PF_ENV_PREFIX):
             k = k[len(PF_ENV_PREFIX):]
         if k in keys:
-            print('[%s] Applying config %s = %s' % (conf_filename, k, displayValue))
+            print(f'[{conf_filename}] Applying config {k} = {displayValue}')
             idx = keys[k]
             lines[idx] = '%s=%s\n' % (k, v)
 
@@ -82,23 +78,17 @@ for conf_filename in conf_files:
             continue
 
         # Hide the value in logs if is password.
-        if "password" in k:
-            displayValue = "********"
-        else:
-            displayValue = v
-
+        displayValue = "********" if "password" in k else v
         k = k[len(PF_ENV_PREFIX):]
         if k not in keys:
-            print('[%s] Adding config %s = %s' % (conf_filename, k, displayValue))
+            print(f'[{conf_filename}] Adding config {k} = {displayValue}')
             lines.append('%s=%s\n' % (k, v))
         else:
-            print('[%s] Updating config %s = %s' % (conf_filename, k, displayValue))
+            print(f'[{conf_filename}] Updating config {k} = {displayValue}')
             lines[keys[k]] = '%s=%s\n' % (k, v)
 
 
-    # Store back the updated config in the same file
-    f = open(conf_filename, 'w')
-    for line in lines:
-        f.write(line)
-    f.close()
+    with open(conf_filename, 'w') as f:
+        for line in lines:
+            f.write(line)
 

@@ -31,5 +31,5 @@ class WordCountFunction(Function):
         words = input.split()
         for word in words:
             context.incr_counter(word, 1)
-            context.get_logger().info("The value is " + str(context.get_counter(word)))
-        return input + "!"
+            context.get_logger().info(f"The value is {str(context.get_counter(word))}")
+        return f"{input}!"

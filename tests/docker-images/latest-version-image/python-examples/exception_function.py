@@ -26,4 +26,4 @@ def process(input):
   if i % 10 == 0:
     raise Exception("test");
 
-  return input + "!"
+  return f"{input}!"

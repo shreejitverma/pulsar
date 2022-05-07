@@ -45,31 +45,30 @@ def import_class(from_path, full_class_name):
     try:
       return import_class_from_path(api_dir, full_class_name)
     except Exception as e:
-      Log.info("Failed to import class %s from path %s" % (full_class_name, from_path))
+      Log.info(f"Failed to import class {full_class_name} from path {from_path}")
       Log.info(e, exc_info=True)
       return None
 
 def import_class_from_path(from_path, full_class_name):
-  Log.debug('Trying to import %s from path %s' % (full_class_name, from_path))
+  Log.debug(f'Trying to import {full_class_name} from path {from_path}')
   split = full_class_name.split('.')
   classname_path = '.'.join(split[:-1])
   class_name = full_class_name.split('.')[-1]
   if from_path not in sys.path:
-    Log.debug("Add a new dependency to the path: %s" % from_path)
+    Log.debug(f"Add a new dependency to the path: {from_path}")
     sys.path.insert(0, from_path)
   if not classname_path:
     mod = importlib.import_module(class_name)
     return mod
   else:
     mod = importlib.import_module(classname_path)
-    retval = getattr(mod, class_name)
-    return retval
+    return getattr(mod, class_name)
 
 def getFullyQualifiedFunctionName(tenant, namespace, name):
-  return "%s/%s/%s" % (tenant, namespace, name)
+  return f"{tenant}/{namespace}/{name}"
 
 def getFullyQualifiedInstanceId(tenant, namespace, name, instance_id):
-    return "%s/%s/%s:%s" % (tenant, namespace, name, instance_id)
+  return f"{tenant}/{namespace}/{name}:{instance_id}"
 
 def get_properties(fullyQualifiedName, instanceId):
     return {"application": "pulsar-function", "id": str(fullyQualifiedName), "instance_id": str(instanceId)}

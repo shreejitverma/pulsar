@@ -136,20 +136,14 @@ class BKManagedStateContext(StateContext):
     def get_amount(self, key):
         try:
             kv = self.__table__.get_str(key)
-            if kv is not None:
-                return kv.number_value
-            else:
-                return None
+            return kv.number_value if kv is not None else None
         except KeyNotFoundError:
             return None
 
     def get_value(self, key):
         try:
             kv = self.__table__.get_str(key)
-            if kv is not None:
-                return kv.value
-            else:
-                return None
+            return kv.value if kv is not None else None
         except KeyNotFoundError:
             return None
 

@@ -698,6 +698,7 @@ class SchemaTest(TestCase):
         client.close()
 
     def test_avro_map_array(self):
+
         class MapArray(Record):
             values = Map(Array(Integer()))
 
@@ -712,15 +713,32 @@ class SchemaTest(TestCase):
 
         topic_prefix = "my-avro-map-array-topic-"
         data_list = (
-            (topic_prefix + "0", AvroSchema(MapArray),
-                MapArray(values={"A": [1, 2], "B": [3]})),
-            (topic_prefix + "1", AvroSchema(MapMap),
-                MapMap(values={"A": {"B": 2},})),
-            (topic_prefix + "2", AvroSchema(ArrayMap),
-                ArrayMap(values=[{"A": 1}, {"B": 2}, {"C": 3}])),
-            (topic_prefix + "3", AvroSchema(ArrayArray),
-                ArrayArray(values=[[1, 2, 3], [4]])),
+            (
+                f"{topic_prefix}0",
+                AvroSchema(MapArray),
+                MapArray(values={"A": [1, 2], "B": [3]}),
+            ),
+            (
+                f"{topic_prefix}1",
+                AvroSchema(MapMap),
+                MapMap(
+                    values={
+                        "A": {"B": 2},
+                    }
+                ),
+            ),
+            (
+                f"{topic_prefix}2",
+                AvroSchema(ArrayMap),
+                ArrayMap(values=[{"A": 1}, {"B": 2}, {"C": 3}]),
+            ),
+            (
+                f"{topic_prefix}3",
+                AvroSchema(ArrayArray),
+                ArrayArray(values=[[1, 2, 3], [4]]),
+            ),
         )
+
 
         client = pulsar.Client(self.serviceUrl)
         for data in data_list:
@@ -1104,7 +1122,7 @@ class SchemaTest(TestCase):
         client = pulsar.Client(self.serviceUrl)
 
         def produce_consume_test(schema_type):
-            topic = "my-complex-schema-topic-" + schema_type
+            topic = f"my-complex-schema-topic-{schema_type}"
 
             data_schema = AvroSchema(ComplexRecord)
             if schema_type == 'json':
@@ -1202,40 +1220,42 @@ class SchemaTest(TestCase):
                 schema=example_avro_schema)
             consumer = client.subscribe(topic, 'test', schema=example_avro_schema)
 
-            for i in range(0, 10):
+            for i in range(10):
                 company = {
-                    "name": "company-name" + str(i),
-                    "address": 'xxx road xxx street ' + str(i),
+                    "name": f"company-name{str(i)}",
+                    "address": f'xxx road xxx street {str(i)}',
                     "employees": [
-                        {"name": "user" + str(i), "age": 20 + i},
-                        {"name": "user" + str(i), "age": 30 + i},
-                        {"name": "user" + str(i), "age": 35 + i},
+                        {"name": f"user{str(i)}", "age": 20 + i},
+                        {"name": f"user{str(i)}", "age": 30 + i},
+                        {"name": f"user{str(i)}", "age": 35 + i},
                     ],
                     "labels": {
-                        "industry": "software" + str(i),
+                        "industry": f"software{str(i)}",
                         "scale": ">100",
-                        "funds": "1000000.0"
+                        "funds": "1000000.0",
                     },
-                    "companyType": "companyType" + str((i % 3) + 1)
+                    "companyType": f"companyType{str((i % 3) + 1)}",
                 }
+
                 producer.send(company)
 
-            for i in range(0, 10):
+            for i in range(10):
                 msg = consumer.receive()
                 company = {
-                    "name": "company-name" + str(i),
-                    "address": 'xxx road xxx street ' + str(i),
+                    "name": f"company-name{str(i)}",
+                    "address": f'xxx road xxx street {str(i)}',
                     "employees": [
-                        {"name": "user" + str(i), "age": 20 + i},
-                        {"name": "user" + str(i), "age": 30 + i},
-                        {"name": "user" + str(i), "age": 35 + i},
+                        {"name": f"user{str(i)}", "age": 20 + i},
+                        {"name": f"user{str(i)}", "age": 30 + i},
+                        {"name": f"user{str(i)}", "age": 35 + i},
                     ],
                     "labels": {
-                        "industry": "software" + str(i),
+                        "industry": f"software{str(i)}",
                         "scale": ">100",
-                        "funds": "1000000.0"
-                    }
+                        "funds": "1000000.0",
+                    },
                 }
+
                 self.assertEqual(msg.value(), company)
                 consumer.acknowledge(msg)
 

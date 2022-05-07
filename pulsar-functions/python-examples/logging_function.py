@@ -30,5 +30,5 @@ class LoggingFunction(Function):
     pass
 
   def process(self, input, context):
-    context.get_logger().info(input + '-log')
-    return input + '!'
+    context.get_logger().info(f'{input}-log')
+    return f'{input}!'

@@ -45,8 +45,11 @@ class RPCServer(object):
         print('Received from {0}: {1}'.format(message.partition_key(),
                                               message.data().decode('utf-8')))
 
-        self.producer.send('{} bar'.format(message.data().decode('utf-8')),
-                           partition_key=message.partition_key())
+        self.producer.send(
+            f"{message.data().decode('utf-8')} bar",
+            partition_key=message.partition_key(),
+        )
+
         consumer.acknowledge(message)
 
     def start(self):

@@ -64,7 +64,7 @@ class ContextImpl(pulsar.Context):
       else {}
 
     self.metrics_labels = metrics_labels
-    self.user_metrics_map = dict()
+    self.user_metrics_map = {}
     self.user_metrics_summary = Summary("pulsar_function_user_metric",
                                     'Pulsar Function user defined metric',
                                         ContextImpl.user_metrics_label_names)
@@ -115,16 +115,13 @@ class ContextImpl(pulsar.Context):
     return self.log
 
   def get_user_config_value(self, key):
-    if key in self.user_config:
-      return self.user_config[key]
-    else:
-      return None
+    return self.user_config[key] if key in self.user_config else None
 
   def get_user_config_map(self):
     return self.user_config
 
   def get_secret(self, secret_key):
-    if not secret_key in self.secrets_map:
+    if secret_key not in self.secrets_map:
       return None
     return self.secrets_provider.provide_secret(secret_key, self.secrets_map[secret_key])
 
@@ -146,7 +143,7 @@ class ContextImpl(pulsar.Context):
 
   def callback_wrapper(self, callback, topic, message_id, result, msg):
     if result != pulsar.Result.Ok:
-      error_msg = "Failed to publish to topic [%s] with error [%s] with src message id [%s]" % (topic, result, message_id)
+      error_msg = f"Failed to publish to topic [{topic}] with error [{result}] with src message id [{message_id}]"
       Log.error(error_msg)
       self.stats.incr_total_sys_exceptions(Exception(error_msg))
     if callback:
@@ -199,12 +196,10 @@ class ContextImpl(pulsar.Context):
     else:
       # if this topic is a partitioned topic
       m = re.search('(.+)-partition-(\d+)', topic)
-      if not m:
-        raise ValueError('Invalid topicname %s' % topic)
-      elif m.group(1) in self.consumers:
-        topic_consumer = self.consumers[m.group(1)]
+      if not m or m[1] not in self.consumers:
+        raise ValueError(f'Invalid topicname {topic}')
       else:
-        raise ValueError('Invalid topicname %s' % topic)
+        topic_consumer = self.consumers[m[1]]
     topic_consumer.acknowledge(msgid)
 
   def get_and_reset_metrics(self):
@@ -222,8 +217,12 @@ class ContextImpl(pulsar.Context):
   def get_metrics(self):
     metrics_map = {}
     for metric_name, user_metric in self.user_metrics_map.items():
-      metrics_map["%s%s_sum" % (Stats.USER_METRIC_PREFIX, metric_name)] = user_metric._sum.get()
-      metrics_map["%s%s_count" % (Stats.USER_METRIC_PREFIX, metric_name)] = user_metric._count.get()
+      metrics_map[
+          f"{Stats.USER_METRIC_PREFIX}{metric_name}_sum"] = user_metric._sum.get(
+          )
+      metrics_map[
+          f"{Stats.USER_METRIC_PREFIX}{metric_name}_count"] = user_metric._count.get(
+          )
 
     return metrics_map
 

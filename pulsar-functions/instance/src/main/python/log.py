@@ -42,7 +42,7 @@ date_format = "%Y-%m-%d %H:%M:%S %z"
 class LogTopicHandler(logging.Handler):
   def __init__(self, topic_name, pulsar_client):
     logging.Handler.__init__(self)
-    Log.info("Setting up producer for log topic %s" % topic_name)
+    Log.info(f"Setting up producer for log topic {topic_name}")
     self.producer = pulsar_client.create_producer(
       str(topic_name),
       block_if_queue_full=True,
@@ -61,9 +61,8 @@ def mkdir_p(path):
     try:
       os.makedirs(path)
     except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(path):
-        pass
-      else: raise
+      if exc.errno != errno.EEXIST or not os.path.isdir(path):
+        raise
 
 # logging handler that is RotatingFileHandler but creates path to log file for you
 # if it doesn't exist

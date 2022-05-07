@@ -49,11 +49,7 @@ for source_dir in SOURCE_DIRS:
             if not (name.endswith('.h') or name.endswith('.cc')):
                 continue
 
-            excluded = False
-            for g in exclude_globs:
-                if fnmatch.fnmatch(name, g):
-                    excluded = True
-                    break
+            excluded = any(fnmatch.fnmatch(name, g) for g in exclude_globs)
             if not excluded:
                 files_to_format.append(name)
 
@@ -62,12 +58,7 @@ if CHECK_FORMAT:
                                      + files_to_format,
                                      stderr=subprocess.STDOUT).decode('utf8')
 
-    to_fix = []
-    for line in output.split('\n'):
-        if 'offset' in line:
-            to_fix.append(line)
-
-    if len(to_fix) > 0:
+    if to_fix := [line for line in output.split('\n') if 'offset' in line]:
         print("clang-format checks failed, run 'make format' to fix")
         sys.exit(-1)
 else:

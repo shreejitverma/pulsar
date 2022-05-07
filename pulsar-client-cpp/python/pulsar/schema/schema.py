@@ -43,8 +43,13 @@ class Schema(object):
 
     def _validate_object_type(self, obj):
         if not isinstance(obj, self._record_cls):
-            raise TypeError('Invalid record obj of type ' + str(type(obj))
-                            + ' - expected type is ' + str(self._record_cls))
+            raise TypeError(
+                (
+                    f'Invalid record obj of type {str(type(obj))}'
+                    + ' - expected type is '
+                )
+                + str(self._record_cls)
+            )
 
 
 class BytesSchema(Schema):
@@ -85,10 +90,7 @@ class JsonSchema(Schema):
                                          record_cls.schema(), 'JSON')
 
     def _get_serialized_value(self, o):
-        if isinstance(o, enum.Enum):
-            return o.value
-        else:
-            return o.__dict__
+        return o.value if isinstance(o, enum.Enum) else o.__dict__
 
     def encode(self, obj):
         self._validate_object_type(obj)

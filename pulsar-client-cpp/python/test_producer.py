@@ -35,7 +35,7 @@ producer = client.create_producer(
                     batching_type=BatchingType.KeyBased
                 )
 
-for i in range(10):
+for _ in range(10):
     try:
         producer.send('hello'.encode('utf-8'), None)
     except Exception as e:

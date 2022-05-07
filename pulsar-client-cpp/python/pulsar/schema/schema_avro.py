@@ -36,10 +36,7 @@ if HAS_AVRO:
             if record_cls is None and schema_definition is None:
                 raise AssertionError("The param record_cls and schema_definition shouldn't be both None.")
 
-            if record_cls is not None:
-                self._schema = record_cls.schema()
-            else:
-                self._schema = schema_definition
+            self._schema = schema_definition if record_cls is None else record_cls.schema()
             super(AvroSchema, self).__init__(record_cls, _pulsar.SchemaType.AVRO, self._schema, 'AVRO')
 
         def _get_serialized_value(self, x):
@@ -48,10 +45,7 @@ if HAS_AVRO:
             elif isinstance(x, Record):
                 return self.encode_dict(x.__dict__)
             elif isinstance(x, list):
-                arr = []
-                for item in x:
-                    arr.append(self._get_serialized_value(item))
-                return arr
+                return [self._get_serialized_value(item) for item in x]
             elif isinstance(x, dict):
                 return self.encode_dict(x)
             else:
@@ -70,18 +64,12 @@ if HAS_AVRO:
             return buffer.getvalue()
 
         def encode_dict(self, d):
-            obj = {}
-            for k, v in d.items():
-                obj[k] = self._get_serialized_value(v)
-            return obj
+            return {k: self._get_serialized_value(v) for k, v in d.items()}
 
         def decode(self, data):
             buffer = io.BytesIO(data)
             d = fastavro.schemaless_reader(buffer, self._schema)
-            if self._record_cls is not None:
-                return self._record_cls(**d)
-            else:
-                return d
+            return self._record_cls(**d) if self._record_cls is not None else d
 
 else:
     class AvroSchema(Schema):

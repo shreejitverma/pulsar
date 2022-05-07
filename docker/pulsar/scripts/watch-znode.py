@@ -96,7 +96,7 @@ while True:
             sys.exit(0)
         elif watch:
             while not zk.exists(znode):
-                print("Waiting for %s" % znode)
+                print(f"Waiting for {znode}")
                 time.sleep(1)
             sys.exit(0)
         elif exists:

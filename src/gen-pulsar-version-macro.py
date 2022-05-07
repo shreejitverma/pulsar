@@ -29,7 +29,5 @@ POM_PATH = join(TOP_LEVEL_PATH, 'pom.xml')
 root = ET.XML(open(POM_PATH).read())
 m = re.search(r'^(\d+)\.(\d+)\.(\d+)', root.find('{http://maven.apache.org/POM/4.0.0}version').text)
 
-version_macro = 0
-for i in range(3):
-    version_macro += int(m.group(3 - i)) * (1000 ** i)
+version_macro = sum(int(m[3 - i]) * 1000 ** i for i in range(3))
 print(version_macro)
